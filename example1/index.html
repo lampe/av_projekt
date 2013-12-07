@@ -1,0 +1,79 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Example 1</title>
+	<script type="text/javascript">
+	//init some variables
+	var myAudioBuffer = null;
+	var audioContext = null;
+	var source = null;
+	//url to the song that we want to play
+	// var url = "http://localhost:8888/example1/Adult_Only_-_Perfume.mp3";
+	var url = "http://localhost:8888/index.html"
+	//wait for the dom to load
+	window.onload = function(){
+		//lets get the AudioContext
+		//we must check if the browser supports audiocontext
+		try{
+			//we must check which context is supported by the browser
+			window.AudioContext = window.AudioContext || window.webkitAudioContext || window.mozAudioContext;
+			audioContext = new AudioContext();
+			//make the load button clickable 
+			document.getElementById("load").disabled = false;
+		}catch(e){
+			//alert the user !
+			alert("your running a old browser :(");
+		}
+	};
+	//load the sound from the server
+	function loadSound(url) {
+		//disable load
+		document.getElementById("load").disabled = true;
+		//make a new ajax request
+		var request = new XMLHttpRequest();
+		request.open('GET', url, true);
+		//we need a arraybuffer because we get the song back in chunks
+		request.responseType = 'arraybuffer';
+		//when finished loading
+		request.onload = function() {
+			//now we need to decode the buffer 
+			audioContext.decodeAudioData(request.response, function(buffer) {
+				myAudioBuffer = buffer;
+				//enable load
+				document.getElementById("play").disabled = false;
+			});
+		}
+		request.send();
+	}
+	// a function to play the sound buffer
+	function playSound(myAudioBuffer) {
+		//disbale play
+		document.getElementById("play").disabled = true;
+		// we have to create a sound source out of the buffer
+		source = audioContext.createBufferSource();
+		// load the buffer into the sound source
+		source.buffer = myAudioBuffer;
+		// connect it to your speaker
+		source.connect(audioContext.destination);
+		// end start playing
+		source.start();
+		//enable false
+		document.getElementById("stop").disabled = false;
+	}
+	function stopSound() {
+		//disable stop
+		document.getElementById("stop").disabled = true;
+		//stop the sound
+		source.stop();
+		//enalbe play
+		document.getElementById("play").disabled = false;
+	} 
+	</script>
+</head>
+<body>
+	<button id='load' onclick="loadSound(url)" disabled>load</button>
+	<button id='play' onclick="playSound(myAudioBuffer)" disabled>play</button>
+	<button id='stop' onclick="stopSound()" disabled>stop</button>
+</body>
+</html>
