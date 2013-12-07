@@ -25,6 +25,8 @@ http.createServer(function(request, response) {
 		fs.readFile(filename, "binary", function(err, file) {
 			//if there is a error with that file return 500
 			if(err) {
+				//chrome is picky on XSS
+				response.setHeader("Access-Control-Allow-Origin", "*");
 				response.writeHead(500, {"Content-Type": "text/plain"});
 				response.write(err + "\n");
 				response.end();
@@ -38,6 +40,6 @@ http.createServer(function(request, response) {
 			response.end();
 		});
 	});
-}).listen(parseInt(port, 10));
+}).listen(port);
  
 console.log("Ich laufe auf http://localhost:" + port + "/");
