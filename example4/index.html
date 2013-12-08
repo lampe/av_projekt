@@ -1,0 +1,148 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Example 1</title>
+	<script type="text/javascript">
+	//init some variables
+	var myAudioBuffer = null;
+	var audioContext = null;
+	var source = null;
+	var analyser = null;
+	var canvas_context;
+	var canvas_context2;
+	var data;
+
+	//url to the song that we want to play
+	var url = "http://localhost:8888/Adult_Only_-_Perfume.mp3";
+	//wait for the dom to load
+	window.onload = function(){
+		canvas = document.getElementById("analyser");
+		canvas_context = canvas.getContext("2d");
+		canvas2 = document.getElementById("analyser2");
+		canvas_context2 = canvas2.getContext("2d");
+		//lets get the AudioContext
+		//we must check if the browser supports audiocontext
+		try{
+			//we must check which context is supported by the browser
+			window.AudioContext = window.AudioContext || window.webkitAudioContext || window.mozAudioContext;
+			audioContext = new AudioContext();
+			//make the load button clickable 
+			document.getElementById("load").disabled = false;
+		}catch(e){
+			//alert the user !
+			alert("your running a old browser :(");
+		}
+	};
+	//load the sound from the server
+	function loadSound(url) {
+		//disable load
+		document.getElementById("load").disabled = true;
+		//make a new ajax request
+		var request = new XMLHttpRequest();
+		request.open('GET', url, true);
+		//we need a arraybuffer because we get the song back in chunks
+		request.responseType = 'arraybuffer';
+		//when finished loading
+		request.onload = function() {
+			//now we need to decode the buffer 
+			audioContext.decodeAudioData(request.response, function(buffer) {
+				myAudioBuffer = buffer;
+				//enable load
+				document.getElementById("play").disabled = false;
+			});
+		}
+		request.onerror = function(error){
+			alert("something went wrong on loading the music file");
+			document.getElementById("load").disabled = false;
+		}
+		request.send();
+	}
+	// a function to play the sound buffer
+	function playSound(myAudioBuffer) {
+		//disbale play
+		document.getElementById("play").disabled = true;
+		//we need a gain Node between the source and the destination
+		gainNode = audioContext.createGain();
+		// we have to create a sound source out of the buffer
+		source = audioContext.createBufferSource();
+		//create a analyzer
+		analyser = audioContext.createAnalyser();
+		analyser.fftSize = 2048;	
+		// load the buffer into the sound source
+		source.buffer = myAudioBuffer;
+		// connect the source to the gainNode
+		source.connect(gainNode);
+		// and the gainNode to the speaker
+		gainNode.connect(analyser);
+
+		analyser.connect(audioContext.destination);
+		// and start playing
+		// Render every 50ms
+		window.setInterval(update, 10);
+		source.start(0);
+		//enable stop
+		document.getElementById("stop").disabled = false;
+		//enable gain
+		document.getElementById("gain").disabled = false;
+	}
+	function stopSound() {
+		//disable stop
+		document.getElementById("stop").disabled = true;
+		//disable gain
+		document.getElementById("gain").disabled = true;
+		//stop the sound
+		source.stop(0);
+		analyser = undefined;
+		//enalbe play
+		document.getElementById("play").disabled = false;
+	}
+	//change the volumen on slide
+	function changeVolume(element){
+		//get the value from the range input
+		var volume = element.value;
+		//the gain node needs values between 0 and 1. 100/100 = 1 
+		var fraction = parseInt(element.value) / parseInt(element.max);
+		this.gainNode.gain.value = fraction * fraction;
+	}
+	once = false;
+	function update() {
+		// Clear the canvas
+		canvas_context.clearRect(0, 0, canvas.width, canvas.height);
+		canvas_context2.clearRect(0, 0, canvas2.width, canvas2.height);
+		var array = new Uint8Array(analyser.frequencyBinCount);
+		var array2 = new Uint8Array(analyser.frequencyBinCount);
+		analyser.getByteFrequencyData(array);
+		analyser.getByteTimeDomainData(array2);
+		for (var i = 0; i < analyser.frequencyBinCount; i++) {
+			var value = -(array[i]);
+			var percent = value / (canvas.height*2);
+			var height = canvas.height * percent;
+			var offset = canvas.height - height - 1;
+			var barWidth = (canvas.width/analyser.frequencyBinCount);
+			var hue = ((i/analyser.frequencyBinCount)) * 360;
+			canvas_context.fillStyle = 'hsl(' + hue + ', 100%, 50%)';
+			canvas_context.fillRect(i * barWidth, canvas.height, barWidth, height);
+		}
+		for (var i = 0; i < analyser.frequencyBinCount; i++) {
+			var value = -(array2[i]);
+			var percent = value / (canvas.height*2);
+			var height = canvas.height * percent;
+			var offset = canvas.height - height - 1;
+			var barWidth = (canvas.width/analyser.frequencyBinCount);
+			var hue = ((i/analyser.frequencyBinCount)) * 360;
+			canvas_context2.fillStyle = 'hsl(' + hue + ', 100%, 50%)';
+			canvas_context2.fillRect(i * barWidth, canvas.height, barWidth, height);
+		}
+	}
+	</script>
+</head>
+<body>
+	<button id='load' onclick="loadSound(url)" disabled>load</button>
+	<button id='play' onclick="playSound(myAudioBuffer)" disabled>play</button>
+	<button id='stop' onclick="stopSound()" disabled>stop</button>
+	<input id='gain' type="range" min="0" max="100" value="100" oninput="changeVolume(this);" disabled>
+	<canvas id="analyser"></canvas>
+	<canvas id="analyser2"></canvas>
+</body>
+</html>
