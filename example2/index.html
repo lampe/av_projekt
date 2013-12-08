@@ -49,30 +49,47 @@
 	function playSound(myAudioBuffer) {
 		//disbale play
 		document.getElementById("play").disabled = true;
+		//we need a gain Node between the source and the destination
+		gainNode = audioContext.createGainNode();
 		// we have to create a sound source out of the buffer
 		source = audioContext.createBufferSource();
 		// load the buffer into the sound source
 		source.buffer = myAudioBuffer;
-		// connect it to your speaker
-		source.connect(audioContext.destination);
+		// connect the source to the gainNode
+		source.connect(gainNode);
+		// and the gainNode to the speaker
+		gainNode.connect(audioContext.destination);
 		// end start playing
 		source.start();
-		//enable false
+		//enable stop
 		document.getElementById("stop").disabled = false;
+		//enable gain
+		document.getElementById("gain").disabled = false;
 	}
 	function stopSound() {
 		//disable stop
 		document.getElementById("stop").disabled = true;
+		//disable gain
+		document.getElementById("gain").disabled = true;
 		//stop the sound
 		source.stop();
 		//enalbe play
 		document.getElementById("play").disabled = false;
-	} 
+	}
+	//change the volumen on slide
+	function changeVolume(element){
+		//get the value from the range input
+		var volume = element.value;
+		//the gain node needs values between 0 and 1. 100/100 = 1 
+		var fraction = parseInt(element.value) / parseInt(element.max);
+		this.gainNode.gain.value = fraction * fraction;
+	}
 	</script>
 </head>
 <body>
 	<button id='load' onclick="loadSound(url)" disabled>load</button>
 	<button id='play' onclick="playSound(myAudioBuffer)" disabled>play</button>
 	<button id='stop' onclick="stopSound()" disabled>stop</button>
+	<input id='gain' type="range" min="0" max="100" value="100" onchange="changeVolume(this);" disabled>
 </body>
 </html>
