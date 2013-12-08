@@ -43,6 +43,10 @@
 				document.getElementById("play").disabled = false;
 			});
 		}
+		request.onerror = function(error){
+			alert("something went wrong on loading the music file");
+			document.getElementById("load").disabled = false;
+		}
 		request.send();
 	}
 	// a function to play the sound buffer
@@ -50,7 +54,7 @@
 		//disbale play
 		document.getElementById("play").disabled = true;
 		//we need a gain Node between the source and the destination
-		gainNode = audioContext.createGainNode();
+		gainNode = audioContext.createGain();
 		// we have to create a sound source out of the buffer
 		source = audioContext.createBufferSource();
 		// load the buffer into the sound source
@@ -60,7 +64,7 @@
 		// and the gainNode to the speaker
 		gainNode.connect(audioContext.destination);
 		// end start playing
-		source.start();
+		source.start(0);
 		//enable stop
 		document.getElementById("stop").disabled = false;
 		//enable gain
@@ -72,7 +76,7 @@
 		//disable gain
 		document.getElementById("gain").disabled = true;
 		//stop the sound
-		source.stop();
+		source.stop(0);
 		//enalbe play
 		document.getElementById("play").disabled = false;
 	}
@@ -90,6 +94,6 @@
 	<button id='load' onclick="loadSound(url)" disabled>load</button>
 	<button id='play' onclick="playSound(myAudioBuffer)" disabled>play</button>
 	<button id='stop' onclick="stopSound()" disabled>stop</button>
-	<input id='gain' type="range" min="0" max="100" value="100" onchange="changeVolume(this);" disabled>
+	<input id='gain' type="range" min="0" max="100" value="100" oninput="changeVolume(this);" disabled>
 </body>
 </html>
