@@ -8,6 +8,13 @@
 	var myAudioBuffer = null;
 	var audioContext = null;
 	var source = null;
+	//var for the pause function
+	//time when we started to play the song
+	var startTime = null;
+	// time when we Paused it
+	var pausedAt = null;
+	//boolean if we paused
+	var paused = true;
 	//url to the song that we want to play
 	var url = "http://localhost:8888/Adult_Only_-_Perfume.mp3";
 	//wait for the dom to load
@@ -49,34 +56,87 @@
 		}
 		request.send();
 	}
+	//toggle function for pause
+	function toggle(myAudioBuffer){
+		//if is paused
+		if (paused){
+			paused = false;
+			playSound(myAudioBuffer)
+		//if its running
+		}else{
+			paused = true;
+			pauseSound();
+		};
+	}
 	// a function to play the sound buffer
 	function playSound(myAudioBuffer) {
 		//disbale play
-		document.getElementById("play").disabled = true;
+		// document.getElementById("play").disabled = true;
+		//we need a gain Node between the source and the destination
+		gainNode = audioContext.createGain();
 		// we have to create a sound source out of the buffer
 		source = audioContext.createBufferSource();
 		// load the buffer into the sound source
 		source.buffer = myAudioBuffer;
-		// connect it to your speaker
-		source.connect(audioContext.destination);
-		// end start playing
-		source.start();
-		//enable false
+		// connect the source to the gainNode
+		source.connect(gainNode);
+		// and the gainNode to the speaker
+		gainNode.connect(audioContext.destination);
+		// check if we have a pausedAt value
+		//if yes then play from that moment
+		if (pausedAt) {
+			// console.log(pausedAt)
+			//get the difference between now and the pausedAt Time
+			startTime = Date.now() - pausedAt;
+			//start at the time pausedAt time
+        	source.start(0,pausedAt / 1000);
+		}else{
+			startTime = Date.now();
+			source.start(0);
+		};
+		//enable stop
 		document.getElementById("stop").disabled = false;
+		//enable gain
+		document.getElementById("gain").disabled = false;
 	}
-	function stopSound() {
+	function pauseSound() {
+		//disable stop
+		// document.getElementById("stop").disabled = true;
+		//disable gain
+		document.getElementById("gain").disabled = true;
+		//stop the sound
+		source.stop(0);
+		//get the time where pause was klicked
+		pausedAt = Date.now() - startTime;
+	}
+	function stopSound(){
 		//disable stop
 		document.getElementById("stop").disabled = true;
+		//disable gain
+		document.getElementById("gain").disabled = true;
 		//stop the sound
-		source.stop();
+		source.stop(0);
+		//reset the values to default
+		startTime = undefined;
+		pausedAt = undefined;
+		paused = true;
 		//enalbe play
 		document.getElementById("play").disabled = false;
-	} 
+	}
+	//change the volumen on slide
+	function changeVolume(element){
+		//get the value from the range input
+		var volume = element.value;
+		//the gain node needs values between 0 and 1. 100/100 = 1 
+		var fraction = parseInt(element.value) / parseInt(element.max);
+		this.gainNode.gain.value = fraction * fraction;
+	}
 	</script>
 </head>
 <body>
 	<button id='load' onclick="loadSound(url)" disabled>load</button>
-	<button id='play' onclick="playSound(myAudioBuffer)" disabled>play</button>
+	<button id='play' onclick="toggle(myAudioBuffer)" disabled>play/pause</button>
 	<button id='stop' onclick="stopSound()" disabled>stop</button>
+	<input id='gain' type="range" min="0" max="100" value="100" oninput="changeVolume(this);" disabled>
 </body>
 </html>
