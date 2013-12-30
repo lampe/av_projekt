@@ -3,6 +3,7 @@
 <head>
 	<meta charset="UTF-8">
 	<title>Example 1</title>
+	<script type="text/javascript"src="three.min.js"></script>
 	<script type="text/javascript">
 	//init some variables
 	var myAudioBuffer = null;
@@ -12,14 +13,51 @@
 	var canvas_context;
 	var canvas_context2;
 	var data;
+		var startTime	= Date.now();
+		var container;
+		var camera, scene, renderer, stats;
+		var cube;
 
+		var targetRotation = 0;
+			var targetRotationOnMouseDown = 0;
 	//url to the song that we want to play
 	var url = "http://localhost:8888/Home.mp3";
-	//var url = "http://localhost:8888/Adult_Only_-_Perfume.mp3";
 	//wait for the dom to load
 	window.onload = function(){
 		canvas = document.getElementById("analyser");
 		canvas_context = canvas.getContext("2d");
+
+		camera = new THREE.Camera( 70, window.innerWidth / window.innerHeight, 1, 1000 );
+		console.log(camera)
+		camera.position.x = 150;
+		camera.position.z = 50;
+		camera.position.y = 150;
+		var materials = [];
+		for ( var i = 0; i < 6; i ++ ) {
+
+					materials.push( [ new THREE.MeshBasicMaterial( { color: Math.random() * 0xffffff } ) ] );
+
+				}
+		scene = new THREE.Scene();
+		cube = new THREE.Mesh( new THREE.CubeGeometry( 200, 200, 200, 1, 1, 1, materials ), new THREE.MeshFaceMaterial() );
+		cube.position.x = 150;
+				cube.position.y = 150;
+		cube.overdraw = true;
+		scene.add( cube )
+		// Plane
+
+				plane = new THREE.Mesh( new THREE.PlaneGeometry( 200, 200 ), new THREE.MeshBasicMaterial( { color: 0xe0e0e0 } ) );
+				plane.rotation.x = - 90 * ( Math.PI / 180 );
+				plane.overdraw = true;
+				scene.add( plane );
+				camera.lookAt(plane.position)
+		container = document.createElement( 'div' );
+		document.body.appendChild( container );
+		renderer = new THREE.CanvasRenderer();
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				console.log(scene)
+				container.appendChild( renderer.domElement );
+				animate();
 		// canvas2 = document.getElementById("analyser2");
 		// canvas_context2 = canvas2.getContext("2d");
 		//lets get the AudioContext
@@ -35,6 +73,21 @@
 			alert("your running a old browser :(");
 		}
 	};
+	function animate() {
+
+				requestAnimationFrame( animate );
+
+				render();
+				// stats.update();
+
+			}
+
+			function render() {
+
+				plane.rotation.z = cube.rotation.y += ( targetRotation - cube.rotation.y ) * 0.05;
+				renderer.render( scene, camera );
+
+			}
 	//load the sound from the server
 	function loadSound(url) {
 		//disable load
@@ -69,7 +122,7 @@
 		source = audioContext.createBufferSource();
 		//create a analyzer
 		analyser = audioContext.createAnalyser();
-		analyser.fftSize = 1024;	
+		analyser.fftSize = 2048;	
 		// load the buffer into the sound source
 		source.buffer = myAudioBuffer;
 		// connect the source to the gainNode
@@ -80,7 +133,7 @@
 		analyser.connect(audioContext.destination);
 		// and start playing
 		// Render every 50ms
-		window.setInterval(update, 60);
+		window.setInterval(update, 27);
 		source.start(0);
 		//enable stop
 		document.getElementById("stop").disabled = false;
@@ -107,7 +160,6 @@
 		this.gainNode.gain.value = fraction * fraction;
 	}
 	once = false;
-	steps = 0
 	function update() {
 		// Clear the canvas
 		canvas_context.clearRect(0, 0, canvas.width, canvas.height);
@@ -116,60 +168,33 @@
 		// var array2 = new Uint8Array(analyser.frequencyBinCount);
 		analyser.getByteFrequencyData(array);
 		// analyser.getByteTimeDomainData(array2);
+		if (array[7] >= 100) {
+			console.log(7, array[7])
+		};
 		// if (array[6] >= 60) {
 		// 	console.log(6, array[6])
 		// };
 		// console.log(array2)
-		Math.floor((Math.random()*100)+1);
-
-		for (var i = 50; i < analyser.frequencyBinCount; i++) {
+		for (var i = 0; i < analyser.frequencyBinCount; i++) {
 			var value = -(array[i]);
-			var percent = value / (canvas.height/10);
+			var percent = value / (canvas.height*2);
 			var height = canvas.height * percent;
 			var offset = canvas.height - height - 1;
-			var barWidth = (canvas.width/analyser.frequencyBinCount);
+			var barWidth = ((canvas.width*20)/analyser.frequencyBinCount);
 			var hue = ((i/analyser.frequencyBinCount)) * 360;
-				// canvas_context.fillStyle = 'hsl(' + hue + ', 100%, 50%)';
-				// canvas_context.fillRect(i*barWidth, canvas.height, barWidth, height);
-			
-				canvas_context.beginPath();
-				canvas_context.arc(canvas.width/2, canvas.height/2, (offset/4) , 0,2*Math.PI);
-				canvas_context.fillStyle = 'hsl(' + hue + ', 100%, 50%)';
-				canvas_context.fill();
-				// canvas_context.stroke();
+			canvas_context.fillStyle = 'hsl(' + hue + ', 100%, 50%)';
+			canvas_context.fillRect(i * barWidth, canvas.height, barWidth, height);
 		}
-		// for (var i = 0; i < 50; i++) {
-		// 	var value = -(array[i]);
+		// for (var i = 0; i < analyser.frequencyBinCount; i++) {
+		// 	var value = -(array2[i]);
 		// 	var percent = value / (canvas.height*2);
 		// 	var height = canvas.height * percent;
 		// 	var offset = canvas.height - height - 1;
 		// 	var barWidth = (canvas.width/analyser.frequencyBinCount);
-		// 	var hue = ((i+50/analyser.frequencyBinCount)) * 360;
-		// 		// canvas_context.fillStyle = 'hsl(' + hue + ', 100%, 50%)';
-		// 		// canvas_context.fillRect(i*barWidth, canvas.height, barWidth, height);
-			
-		// 		canvas_context.beginPath();
-		// 		canvas_context.arc(canvas.width/2, canvas.height/2, (offset/10) , 0,2*Math.PI);
-		// 		canvas_context.fillStyle = 'hsl(' + hue + ', 100%, 50%)';
-		// 		canvas_context.fill();
-		// 		// canvas_context.stroke();
+		// 	var hue = ((i/analyser.frequencyBinCount)) * 360;
+		// 	canvas_context2.fillStyle = 'hsl(' + hue + ', 100%, 50%)';
+		// 	canvas_context2.fillRect(i * barWidth, canvas.height, barWidth, height);
 		// }
-		for (var i = 0; i < 50; i++) {
-			var value = -(array[i]);
-			var percent = value / (canvas.height/4);
-			var height = canvas.height * percent;
-			var offset = canvas.height - height - 1;
-			var barWidth = (canvas.width/analyser.frequencyBinCount);
-			var hue = ((i/analyser.frequencyBinCount)) * 360;
-				// canvas_context.fillStyle = 'hsl(' + hue + ', 100%, 50%)';
-				// canvas_context.fillRect(i*barWidth, canvas.height, barWidth, height);
-			
-				canvas_context.beginPath();
-				canvas_context.arc(canvas.width/2, canvas.height/2, (offset/10) , 0,2*Math.PI);
-				canvas_context.fillStyle = 'hsl(' + hue + ', 100%, 50%)';
-				canvas_context.fill();
-				// canvas_context.stroke();
-		}
 	}
 	</script>
 	<style type="text/css">
