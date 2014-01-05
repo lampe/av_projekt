@@ -69,7 +69,7 @@
 		source = audioContext.createBufferSource();
 		//create a analyzer
 		analyser = audioContext.createAnalyser();
-		analyser.fftSize = 1024;	
+		analyser.fftSize = 512;	
 		// load the buffer into the sound source
 		source.buffer = myAudioBuffer;
 		// connect the source to the gainNode
@@ -106,40 +106,40 @@
 		var fraction = parseInt(element.value) / parseInt(element.max);
 		this.gainNode.gain.value = fraction * fraction;
 	}
-	once = false;
-	steps = 0
+	// the update draw function
 	function update() {
 		// Clear the canvas
 		canvas_context.clearRect(0, 0, canvas.width, canvas.height);
+		// get the fftSize/2 in a int 8bit array
 		var array = new Uint8Array(analyser.frequencyBinCount);
 		analyser.getByteFrequencyData(array);
-		Math.floor((Math.random()*100)+1);
+		
+		//We are drawing to circles because the lower frequencys are to noise to display them correct
 
+		//We first must draw the bigger circles 
 		for (var i = 50; i < analyser.frequencyBinCount; i++) {
-			var value = -(array[i]);
-			var percent = value / (canvas.height/10);
-			var height = canvas.height * percent;
-			var offset = canvas.height - height - 1;
-			var barWidth = (canvas.width/analyser.frequencyBinCount);
+			var value = -array[i];
+			// the 2 next lines calculates the radius
+			var height = canvas.height * (value / (canvas.height/10));
+			var offset = (canvas.height - height - 1)/6;
+			// the color of the circle
 			var hue = ((i/analyser.frequencyBinCount)) * 360;
-				canvas_context.beginPath();
-				canvas_context.arc(canvas.width/2, canvas.height/2, (offset/6) , 0,2*Math.PI);
-				canvas_context.fillStyle = 'hsl(' + hue + ', 100%, 50%)';
-				canvas_context.fill();
-				// canvas_context.stroke();
+			// drawing the circle
+			canvas_context.beginPath();
+			canvas_context.arc(canvas.width/2, canvas.height/2, offset , 0,2*Math.PI);
+			canvas_context.fillStyle = 'hsl(' + hue + ', 100%, 50%)';
+			canvas_context.fill();
 		}
+		// like the first for loop but with different values for the radius
 		for (var i = 0; i < 50; i++) {
 			var value = -(array[i]);
-			var percent = value / (canvas.height/4);
-			var height = canvas.height * percent;
-			var offset = canvas.height - height - 1;
-			var barWidth = (canvas.width/analyser.frequencyBinCount);
+			var height = canvas.height * (value / (canvas.height/4));
+			var offset = (canvas.height - height - 1)/16;
 			var hue = ((i/analyser.frequencyBinCount)) * 360;
-				canvas_context.beginPath();
-				canvas_context.arc(canvas.width/2, canvas.height/2, (offset/16) , 0,2*Math.PI);
-				canvas_context.fillStyle = 'hsl(' + hue + ', 100%, 50%)';
-				canvas_context.fill();
-				// canvas_context.stroke();
+			canvas_context.beginPath();
+			canvas_context.arc(canvas.width/2, canvas.height/2, offset , 0,2*Math.PI);
+			canvas_context.fillStyle = 'hsl(' + hue + ', 100%, 50%)';
+			canvas_context.fill();
 		}
 	}
 	</script>
