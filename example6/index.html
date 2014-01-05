@@ -1,0 +1,91 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Example 5</title>
+	<script type="text/javascript">
+	//url to the song that we want to play
+	var url = "http://localhost:8888/brown_noise.wav";
+	//init some variables
+	var myAudioBuffer = null;
+	var audioContext = null;
+	var source = null;
+	var targetRotation = 0;
+	var targetRotationOnMouseDown = 0;
+	
+	
+	var micSource = null;
+	var analyser,volume,recorder;
+	var recording = false;
+	var counter = 0;
+	var buffer,oscillator;
+	var once = true;
+	function getMic(){
+		navigator.webkitGetUserMedia({audio: true},
+			function(stream){
+				analyser = audioContext.createAnalyser();
+        		micSource = audioContext.createMediaStreamSource(stream);
+        		source = audioContext.createBufferSource();
+        		window.source = source;
+        		volume = audioContext.createGain();
+    			micSource.connect(volume);
+        		var bufferSize = 2048;
+    			oscillator = audioContext.createOscillator();
+    			oscillator.type = oscillator.TRIANGLE;
+    			oscillator.frequency.value = 440; // Set waveform frequency to 440 Hz
+				// oscillator.detune.value = Math.pow(2, 1/12) * 10; // Offset sound by 10 semitones
+				oscillator.connect(audioContext.destination);
+				oscillator.noteOn(0);
+    			recorder = audioContext.createJavaScriptNode(bufferSize, 2, 2);
+    			recorder.onaudioprocess = function(stream){
+			        // if (!recording) return;
+			        left = stream.inputBuffer.getChannelData(0);
+			        right = stream.inputBuffer.getChannelData(1);
+			        for (var i = left.length - 1; i >= 50; i--) {
+			        	if (left[i] > 0.02) {
+			        		left[i] = left[i] - 0.83;
+			        	};
+			        	if(right[i] > 0.02) {
+			        		right[i] = right[i] - 0.83;
+			        	}
+			        	
+			        };
+			        source.buffer = stream.inputBuffer;
+			        if (once) {
+			        	window.source.start(0);
+			        	once = false;
+			        };
+			    }
+        		// micSource.connect(audioContext.destination);
+       //  		volume.connect (recorder);
+       //  		source.loop = true;
+       //  		source.connect(audioContext.destination);
+    			// recorder.connect (audioContext.destination); 
+			},
+			function (stream) {
+				alert("error: " + stream.name);
+			}
+		);
+		
+	}
+	window.onload = function(){
+		try{
+			//we must check which context is supported by the browser
+			window.AudioContext = window.AudioContext || window.webkitAudioContext || window.mozAudioContext;
+			audioContext = new AudioContext();
+			getMic();
+			recording = true;
+		}catch(e){
+			//alert the user !
+			alert("your running a old browser :(");
+			console.log(e);
+		}
+	};
+	</script>
+	<style type="text/css">
+
+	</style>
+</head>
+<body>
+</body>
+</html>

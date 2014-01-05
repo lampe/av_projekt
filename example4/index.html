@@ -80,7 +80,7 @@
 		analyser.connect(audioContext.destination);
 		// and start playing
 		// Render every 50ms
-		window.setInterval(update, 60);
+		window.setInterval(update, 40);
 		source.start(0);
 		//enable stop
 		document.getElementById("stop").disabled = false;
@@ -111,15 +111,8 @@
 	function update() {
 		// Clear the canvas
 		canvas_context.clearRect(0, 0, canvas.width, canvas.height);
-		// canvas_context2.clearRect(0, 0, canvas2.width, canvas2.height);
 		var array = new Uint8Array(analyser.frequencyBinCount);
-		// var array2 = new Uint8Array(analyser.frequencyBinCount);
 		analyser.getByteFrequencyData(array);
-		// analyser.getByteTimeDomainData(array2);
-		// if (array[6] >= 60) {
-		// 	console.log(6, array[6])
-		// };
-		// console.log(array2)
 		Math.floor((Math.random()*100)+1);
 
 		for (var i = 50; i < analyser.frequencyBinCount; i++) {
@@ -129,31 +122,12 @@
 			var offset = canvas.height - height - 1;
 			var barWidth = (canvas.width/analyser.frequencyBinCount);
 			var hue = ((i/analyser.frequencyBinCount)) * 360;
-				// canvas_context.fillStyle = 'hsl(' + hue + ', 100%, 50%)';
-				// canvas_context.fillRect(i*barWidth, canvas.height, barWidth, height);
-			
 				canvas_context.beginPath();
-				canvas_context.arc(canvas.width/2, canvas.height/2, (offset/4) , 0,2*Math.PI);
+				canvas_context.arc(canvas.width/2, canvas.height/2, (offset/6) , 0,2*Math.PI);
 				canvas_context.fillStyle = 'hsl(' + hue + ', 100%, 50%)';
 				canvas_context.fill();
 				// canvas_context.stroke();
 		}
-		// for (var i = 0; i < 50; i++) {
-		// 	var value = -(array[i]);
-		// 	var percent = value / (canvas.height*2);
-		// 	var height = canvas.height * percent;
-		// 	var offset = canvas.height - height - 1;
-		// 	var barWidth = (canvas.width/analyser.frequencyBinCount);
-		// 	var hue = ((i+50/analyser.frequencyBinCount)) * 360;
-		// 		// canvas_context.fillStyle = 'hsl(' + hue + ', 100%, 50%)';
-		// 		// canvas_context.fillRect(i*barWidth, canvas.height, barWidth, height);
-			
-		// 		canvas_context.beginPath();
-		// 		canvas_context.arc(canvas.width/2, canvas.height/2, (offset/10) , 0,2*Math.PI);
-		// 		canvas_context.fillStyle = 'hsl(' + hue + ', 100%, 50%)';
-		// 		canvas_context.fill();
-		// 		// canvas_context.stroke();
-		// }
 		for (var i = 0; i < 50; i++) {
 			var value = -(array[i]);
 			var percent = value / (canvas.height/4);
@@ -161,11 +135,8 @@
 			var offset = canvas.height - height - 1;
 			var barWidth = (canvas.width/analyser.frequencyBinCount);
 			var hue = ((i/analyser.frequencyBinCount)) * 360;
-				// canvas_context.fillStyle = 'hsl(' + hue + ', 100%, 50%)';
-				// canvas_context.fillRect(i*barWidth, canvas.height, barWidth, height);
-			
 				canvas_context.beginPath();
-				canvas_context.arc(canvas.width/2, canvas.height/2, (offset/10) , 0,2*Math.PI);
+				canvas_context.arc(canvas.width/2, canvas.height/2, (offset/16) , 0,2*Math.PI);
 				canvas_context.fillStyle = 'hsl(' + hue + ', 100%, 50%)';
 				canvas_context.fill();
 				// canvas_context.stroke();
@@ -184,6 +155,5 @@
 	<button id='stop' onclick="stopSound()" disabled>stop</button>
 	<input id='gain' type="range" min="0" max="100" value="100" oninput="changeVolume(this);" disabled>
 	<canvas id="analyser"></canvas>
-	<!-- <canvas id="analyser2"></canvas> -->
 </body>
 </html>
