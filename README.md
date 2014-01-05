@@ -1,5 +1,5 @@
 # AV Projekt
-
+by Michael Lazarski
 ## Requirements 
 
 - Nodejs for the server to request the audio files
