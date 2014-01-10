@@ -1,0 +1,105 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Example 8</title>
+	<script type="text/javascript" src="example8/external/qwerty-hancock.js" ></script>
+	
+	<script type="text/javascript">
+	var audioContext = new webkitAudioContext;
+	var XOSC,delay;
+	window.onload=function(){
+		// 
+		var ThreeXOSC = function(audioContext){
+			// save the audioContext to the new instance
+			this.audioContext = audioContext;
+			// creates 3 osc.
+			this.osc = [1, 2, 3].map(function() {
+				return audioContext.createOscillator();	
+			});
+			// create a gain Node for every osc
+			this.oscGains = this.osc.map(function(osc) {
+				var gainNode = audioContext.createGainNode();
+				gainNode.value = 0.7;
+				osc.gainNode = gainNode;
+				osc.gain = gainNode.gain;
+				return gainNode;
+			});
+
+			this.gain = audioContext.createGainNode();
+			
+			this.output = this.gain;
+			
+			this.osc[0].detune.value = 0;
+			this.osc[1].detune.value = -1200;
+			this.osc[2].detune.value = -2400;
+			// we need that because forEach has a different scope
+			var output =  this.output;
+			this.osc.forEach(function(osc, i) {
+				osc.connect(osc.gainNode);
+				osc.gainNode.connect(output);
+			});
+		}
+		//start all of them 
+		ThreeXOSC.prototype.start = function(t) {
+			for (var i=0; i<3; i++) {
+				this.osc[i].noteOn(t);
+			}
+		};
+		function makeSynth(freq) {
+			var synth = new ThreeXOSC(audioContext);
+			synth.osc[0].type = 0;
+			synth.osc[1].type = 2;
+			synth.osc[2].type = 1;
+			synth.osc[0].detune.value = -1200;
+			synth.osc[1].detune.value = 1200;
+			synth.osc[2].detune.value = 0;
+			synth.osc.forEach(function(osc) {
+				osc.frequency.setValueAtTime(freq, 0);
+			});
+			synth.start(0);
+			synth.output.gain.value = 1;
+			return synth;
+		}
+		delay = audioContext.createDelayNode()
+		keyboard = new QwertyHancock({
+                 id: 'keyboard',
+                 width: 900,
+                 height: 150,
+                 octaves: 4,
+                 startNote: 'A4',
+                 whiteNotesColour: 'white',
+                 blackNotesColour: 'black',
+                 hoverColour: '#f3e939',
+                 keyboardLayout: 'en'
+            });
+		var notes = {};
+		keyboard.keyDown = function (note, frequency) {
+	    	console.log('down',note,frequency)
+	    	var synth = makeSynth(frequency);
+			synth.output.connect(delay);
+			notes[note] = synth;
+		};
+		delay.delayTime.value = 0.08; // delay synth to sync with microphone
+		delay.connect(audioContext.destination);
+		keyboard.keyUp = function (note, frequency) {
+		    var synth = notes[note];
+			if (!synth) return;
+			var releaseTime = 0.4;
+
+			synth.output.gain.setTargetAtTime(0, 0, releaseTime / 5);
+			setTimeout(function() {
+				synth.output.disconnect();
+			}, 1000 * releaseTime);
+			delete notes[note];
+		};
+	}
+	</script>
+</head>
+<body>
+	<button id='load' onclick="loadSound(url)" disabled>load</button>
+	<button id='play' onclick="playSound(myAudioBuffer)" disabled>play</button>
+	<button id='stop' onclick="stopSound()" disabled>stop</button>
+	<div id="keyboard"></div>
+</body>
+</html>

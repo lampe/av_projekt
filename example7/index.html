@@ -1,0 +1,44 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Example 1</title>
+	<script type="text/javascript">
+
+	window.AudioContext = window.AudioContext || window.webkitAudioContext || window.mozAudioContext;
+	context = new AudioContext();
+	var osc = context.createOscillator();
+	var volumeNode;
+	// Max value for Wavetable in the web audio api spec
+	var n = 4096;
+	function playSound () {
+		var real = new Float32Array(n);
+		var imag = new Float32Array(n);
+		// we only need to fill every second value because this is a PeriodicWave
+		for(var x = 1; x < n; x+=2) {
+			imag[x] = 4.0 / (Math.PI*x);
+		}
+
+		var table = context.createPeriodicWave(real, imag);
+		osc.setPeriodicWave(table);
+		osc.start(1);
+		volumeNode = context.createGain();
+		volumeNode.gain.value = 0.2;
+		osc.connect(volumeNode);
+		volumeNode.connect(context.destination);
+
+		document.getElementById("play").disabled = true;
+		document.getElementById("stop").disabled = false;
+	}
+	function stopSound(){
+		volumeNode.disconnect();
+		document.getElementById("play").disabled = false;
+		document.getElementById("stop").disabled = true;
+	}
+	</script>
+</head>
+<body>
+	<button id='play' onclick="playSound()">play</button>
+	<button id='stop' onclick="stopSound()" disabled>stop</button>
+</body>
+</html>
