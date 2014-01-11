@@ -5,7 +5,7 @@
 	<title>Example 5</title>
 	<script type="text/javascript">
 	//url to the song that we want to play
-	var url = "http://localhost:8888/brown_noise.wav";
+	var url = "http://localhost:8888/Home.mp3";
 	//init some variables
 	var myAudioBuffer = null;
 	var audioContext = null;
@@ -21,7 +21,9 @@
 	var buffer,oscillator;
 	var once = true;
 	function getMic(){
-		navigator.webkitGetUserMedia({audio: true},
+		navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia
+		window.URL = window.URL || window.webkitURL || window.mozURL;
+		navigator.getUserMedia({audio: true},
 			function(stream){
 				analyser = audioContext.createAnalyser();
         		micSource = audioContext.createMediaStreamSource(stream);
@@ -33,9 +35,9 @@
     			oscillator = audioContext.createOscillator();
     			oscillator.type = oscillator.TRIANGLE;
     			oscillator.frequency.value = 440; // Set waveform frequency to 440 Hz
-				// oscillator.detune.value = Math.pow(2, 1/12) * 10; // Offset sound by 10 semitones
+				oscillator.detune.value = Math.pow(2, 1/12) * 10; // Offset sound by 10 semitones
 				oscillator.connect(audioContext.destination);
-				oscillator.noteOn(0);
+				oscillator.start(0);
     			recorder = audioContext.createJavaScriptNode(bufferSize, 2, 2);
     			recorder.onaudioprocess = function(stream){
 			        // if (!recording) return;
@@ -56,14 +58,14 @@
 			        	once = false;
 			        };
 			    }
-        		// micSource.connect(audioContext.destination);
-       //  		volume.connect (recorder);
-       //  		source.loop = true;
-       //  		source.connect(audioContext.destination);
-    			// recorder.connect (audioContext.destination); 
+        		micSource.connect(audioContext.destination);
+        		volume.connect (recorder);
+        		source.loop = true;
+        		source.connect(audioContext.destination);
+    			recorder.connect (audioContext.destination); 
 			},
 			function (stream) {
-				alert("error: " + stream.name);
+				console.log("error: ", stream);
 			}
 		);
 		
@@ -76,7 +78,7 @@
 			getMic();
 			recording = true;
 		}catch(e){
-			//alert the user !
+			// alert the user !
 			alert("your running a old browser :(");
 			console.log(e);
 		}
