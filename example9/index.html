@@ -1,0 +1,79 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>Example 8</title>
+	<script type="text/javascript" src="example9/external/qwerty-hancock.js" ></script>
+	<script type="text/javascript" src="example9/threexosc.js"></script>
+	<script type="text/javascript" src="example9/vocoder.js"></script>
+	<script type="text/javascript">
+	window.AudioContext = window.AudioContext || window.webkitAudioContext || window.mozAudioContext;
+	var audioContext = new AudioContext();
+	var compressor = audioContext.createDynamicsCompressor();
+	var XOSC,delay,synth,releaseTime,microphone,V;
+	window.onload=function(){ 
+
+
+		//function to creat a synth on every note play
+		function creatSynth(freq) {
+			synth = new ThreeXOSC(audioContext);
+			synth.osc.forEach(function(osc) {
+				osc.frequency.setValueAtTime(freq, 0);
+			});
+			synth.start(0);
+			synth.output.gain.value = 2;
+			return synth;
+		}
+
+		//create the keyboard layout and variables we need
+		// we need to remember the keys we pressed
+		var keys = {};
+		
+		keyboard = new QwertyHancock({
+                 id: 'keyboard',
+                 width: 900,
+                 height: 150,
+                 octaves: 4,
+                 startNote: 'A4',
+                 whiteNotesColour: 'white',
+                 blackNotesColour: 'black',
+                 hoverColour: '#f3e939',
+                 keyboardLayout: 'en'
+        });
+		// on key down play the osc
+		keyboard.keyDown = function (note, frequency) {
+	    	synth = creatSynth(frequency);
+			synth.output.connect(delay);
+			keys[note] = synth;
+		};
+		// on key up release them with a slight realsetime
+		keyboard.keyUp = function (note, frequency) {
+		    var synth = keys[note];
+			//check if note is not allready deleted
+			if (!synth) return;
+
+			releaseTime = 0.4;
+			//fadout
+			synth.output.gain.setTargetAtTime(0, 0, releaseTime / 5);
+			//disconnect
+			setTimeout(function() {
+				synth.output.disconnect();
+			}, 1000 * releaseTime);
+			//delete the key
+			delete keys[note];
+		};
+
+		V = new Vocoder(audioContext);
+		V.initModulator()
+		delay = audioContext.createDelay()
+		delay.delayTime.value = 0.08; //delay for mic sync
+		delay.connect(V.carrierInput);
+		compressor.connect(audioContext.destination);
+		V.output.connect(compressor);
+	}
+	</script>
+</head>
+<body>
+	<div id="keyboard"></div>
+</body>
+</html>

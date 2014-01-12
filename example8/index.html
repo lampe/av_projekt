@@ -7,32 +7,43 @@
 	
 	<script type="text/javascript">
 	var audioContext = new webkitAudioContext;
-	var XOSC,delay;
+	var XOSC;
+	var delay;
+	var synth;
+	var releaseTime;
 	window.onload=function(){
-		// 
+
+		// the ThreeXOSC implementatoin
 		var ThreeXOSC = function(audioContext){
 			// save the audioContext to the new instance
 			this.audioContext = audioContext;
-			// creates 3 osc.
-			this.osc = [1, 2, 3].map(function() {
-				return audioContext.createOscillator();	
-			});
-			// create a gain Node for every osc
-			this.oscGains = this.osc.map(function(osc) {
+			// creates 3 osc
+			this.osc = [];
+			this.osc[0] = audioContext.createOscillator();
+			this.osc[1] = audioContext.createOscillator();
+			this.osc[2] = audioContext.createOscillator();
+			
+			// creat gain nodes for every osc
+			var oscGains = [];
+			this.osc.forEach(function(osc, i) {
 				var gainNode = audioContext.createGainNode();
-				gainNode.value = 0.7;
+				gainNode.value = 0.5;
 				osc.gainNode = gainNode;
 				osc.gain = gainNode.gain;
-				return gainNode;
+				oscGains.push(osc);
 			});
-
+			this.oscGains = oscGains
+			//create the gain for the output node
 			this.gain = audioContext.createGainNode();
-			
 			this.output = this.gain;
-			
+			//set default osc types
+			this.osc[0].type = 3;
+			this.osc[1].type = 2;
+			this.osc[2].type = 1;
+			//set default detune values
 			this.osc[0].detune.value = 0;
-			this.osc[1].detune.value = -1200;
-			this.osc[2].detune.value = -2400;
+			this.osc[1].detune.value = -300;
+			this.osc[2].detune.value = -600;
 			// we need that because forEach has a different scope
 			var output =  this.output;
 			this.osc.forEach(function(osc, i) {
@@ -42,18 +53,14 @@
 		}
 		//start all of them 
 		ThreeXOSC.prototype.start = function(t) {
-			for (var i=0; i<3; i++) {
-				this.osc[i].noteOn(t);
-			}
-		};
-		function makeSynth(freq) {
-			var synth = new ThreeXOSC(audioContext);
-			synth.osc[0].type = 0;
-			synth.osc[1].type = 2;
-			synth.osc[2].type = 1;
-			synth.osc[0].detune.value = -1200;
-			synth.osc[1].detune.value = 1200;
-			synth.osc[2].detune.value = 0;
+			this.osc.forEach(function(osc) {
+				osc.noteOn(t);
+			});
+		}
+
+		//function to creat a synth on every note play
+		function creatSynth(freq) {
+			synth = new ThreeXOSC(audioContext);
 			synth.osc.forEach(function(osc) {
 				osc.frequency.setValueAtTime(freq, 0);
 			});
@@ -61,7 +68,10 @@
 			synth.output.gain.value = 1;
 			return synth;
 		}
-		delay = audioContext.createDelayNode()
+
+		//create the keyboard layout and variables we need
+		// we need to remember the keys we pressed
+		var keys = {};
 		keyboard = new QwertyHancock({
                  id: 'keyboard',
                  width: 900,
@@ -72,34 +82,33 @@
                  blackNotesColour: 'black',
                  hoverColour: '#f3e939',
                  keyboardLayout: 'en'
-            });
-		var notes = {};
+        });
+		// on key down play the osc
 		keyboard.keyDown = function (note, frequency) {
-	    	console.log('down',note,frequency)
-	    	var synth = makeSynth(frequency);
-			synth.output.connect(delay);
-			notes[note] = synth;
+	    	synth = creatSynth(frequency);
+			synth.output.connect(audioContext.destination);
+			keys[note] = synth;
 		};
-		delay.delayTime.value = 0.08; // delay synth to sync with microphone
-		delay.connect(audioContext.destination);
+		// on key up release them with a slight realsetime
 		keyboard.keyUp = function (note, frequency) {
-		    var synth = notes[note];
+		    var synth = keys[note];
+			//check if note is not allready deleted
 			if (!synth) return;
-			var releaseTime = 0.4;
 
+			releaseTime = 0.4;
+			//fadout
 			synth.output.gain.setTargetAtTime(0, 0, releaseTime / 5);
+			//disconnect
 			setTimeout(function() {
 				synth.output.disconnect();
 			}, 1000 * releaseTime);
-			delete notes[note];
+			//delete the key
+			delete keys[note];
 		};
 	}
 	</script>
 </head>
 <body>
-	<button id='load' onclick="loadSound(url)" disabled>load</button>
-	<button id='play' onclick="playSound(myAudioBuffer)" disabled>play</button>
-	<button id='stop' onclick="stopSound()" disabled>stop</button>
 	<div id="keyboard"></div>
 </body>
 </html>
