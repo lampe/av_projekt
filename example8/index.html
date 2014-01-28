@@ -37,13 +37,13 @@
 			this.gain = audioContext.createGainNode();
 			this.output = this.gain;
 			//set default osc types
-			this.osc[0].type = 3;
-			this.osc[1].type = 2;
-			this.osc[2].type = 1;
+			this.osc[0].type = 2;
+			this.osc[1].type = 1;
+			this.osc[2].type = 3;
 			//set default detune values
 			this.osc[0].detune.value = 0;
 			this.osc[1].detune.value = -300;
-			this.osc[2].detune.value = -600;
+			this.osc[2].detune.value = -1200;
 			// we need that because forEach has a different scope
 			var output =  this.output;
 			this.osc.forEach(function(osc, i) {
@@ -77,7 +77,7 @@
                  width: 900,
                  height: 150,
                  octaves: 4,
-                 startNote: 'A4',
+                 startNote: 'A5',
                  whiteNotesColour: 'white',
                  blackNotesColour: 'black',
                  hoverColour: '#f3e939',
